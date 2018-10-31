@@ -26,14 +26,15 @@
 .SH NAME
 fanotify \- monitoring filesystem events
 .SH DESCRIPTION
-The fanotify API provides notification and interception of
+The fanotify API provides the notification and interception of
 filesystem events.
 Use cases include virus scanning and hierarchical storage management.
-Currently, only a limited set of events is supported.
+Currently, only a limited set of events are supported.
 In particular, there is no support for create, delete, and move events.
 (See
 .BR inotify (7)
-for details of an API that does notify those events.)
+for details of an API that does provide notifications for these type of
+events.)
 .PP
 Additional capabilities compared to the
 .BR inotify (7)
@@ -52,14 +53,14 @@ and
 .SS fanotify_init(), fanotify_mark(), and notification groups
 The
 .BR fanotify_init (2)
-system call creates and initializes an fanotify notification group
+system call creates and initializes a fanotify notification group
 and returns a file descriptor referring to it.
 .PP
-An fanotify notification group is a kernel-internal object that holds
+A fanotify notification group is a kernel-internal object that holds
 a list of files, directories, and mount points for which events shall be
 created.
 .PP
-For each entry in an fanotify notification group, two bit masks exist: the
+For each entry in a fanotify notification group, two bit masks exist: the
 .I mark
 mask and the
 .I ignore
@@ -68,13 +69,13 @@ The mark mask defines file activities for which an event shall be created.
 The ignore mask defines activities for which no event shall be generated.
 Having these two types of masks permits a mount point or directory to be
 marked for receiving events, while at the same time ignoring events for
-specific objects under that mount point or directory.
+specific objects under the same mount point, or directory.
 .PP
 The
 .BR fanotify_mark (2)
 system call adds a file, directory, or mount to a notification group
-and specifies which events
-shall be reported (or ignored), or removes or modifies such an entry.
+and specifies which events shall be reported (or ignored), or removes or
+modifies such an entry.
 .PP
 A possible usage of the ignore mask is for a file cache.
 Events of interest for a file cache are modification of a file and closing
@@ -89,7 +90,7 @@ Hence, the modify event can be added to the ignore mask.
 Upon receiving the close event, the modify event can be removed from the
 ignore mask and the file cache entry can be updated.
 .PP
-The entries in the fanotify notification groups refer to files and
+The entries in a fanotify notification group refer to files and
 directories via their inode number and to mounts via their mount ID.
 If files or directories are renamed or moved within the same mount,
 the respective entries survive.
@@ -105,7 +106,7 @@ from the fanotify file descriptor
 returned by
 .BR fanotify_init (2).
 .PP
-Two types of events are generated:
+Two possible event types are generated:
 .I notification
 events and
 .I permission
@@ -117,13 +118,13 @@ in the event (see below).
 Permission events are requests to the receiving application to decide
 whether permission for a file access shall be granted.
 For these events, the recipient must write a response which decides whether
-access is granted or not.
+access is granted, or not.
 .PP
 An event is removed from the event queue of the fanotify group
 when it has been read.
 Permission events that have been read are kept in an internal list of the
 fanotify group until either a permission decision has been taken by
-writing to the fanotify file descriptor or the fanotify file descriptor
+writing to the fanotify file descriptor, or the fanotify file descriptor
 is closed.
 .SS Reading fanotify events
 Calling
@@ -250,6 +251,12 @@ A file or a directory (but see BUGS) was accessed (read).
 .B FAN_OPEN
 A file or a directory was opened.
 .TP
+.B FAN_OPEN_EXEC
+A file was opened with the intent to be executed.
+See
+.B NOTES
+for additional details.
+.TP
 .B FAN_MODIFY
 A file was modified.
 .TP
@@ -285,6 +292,14 @@ access the filesystem object shall be granted.
 An application wants to open a file or directory.
 The reader must write a response that determines whether the permission to
 open the filesystem object shall be granted.
+.TP
+.B FAN_OPEN_EXEC_PERM
+An application wants to open a file for execution.
+The reader must write a response that determines whether the permission to
+open the filesystem object for execution shall be granted.
+See
+.B NOTES
+for additional details.
 .PP
 To check for any close event, the following bit mask may be used:
 .TP
@@ -297,7 +312,7 @@ This is a synonym for:
 The following macros are provided to iterate over a buffer containing
 fanotify event metadata returned by a
 .BR read (2)
-from an fanotify file descriptor:
+from a fanotify file descriptor:
 .TP
 .B FAN_EVENT_OK(meta, len)
 This macro checks the remaining length
@@ -334,8 +349,8 @@ This macro returns the size (in bytes) of the structure
 .IR fanotify_event_metadata .
 This is the minimum size (and currently the only size) of any event metadata.
 .\"
-.SS Monitoring an fanotify file descriptor for events
-When an fanotify event occurs, the fanotify file descriptor indicates as
+.SS Monitoring a fanotify file descriptor for events
+When a fanotify event occurs, the fanotify file descriptor indicates as
 readable when passed to
 .BR epoll (7),
 .BR poll (2),
@@ -484,6 +499,24 @@ Monitoring mounts offers the capability to monitor a whole directory tree.
 .PP
 The event queue can overflow.
 In this case, events are lost.
+.PP
+When using either
+.B FAN_OPEN_EXEC
+or
+.B FAN_OPEN_EXEC_PERM
+within the
+.IR mask ,
+events of these types will only be returned when the direct execution of a
+program occurs.
+More specifically, this means that events of these types will be generated
+for files that are opened using system calls
+.BR execve(2) ,
+.BR execveat(2) ,
+or
+.BR uselib(2) .
+Events of these types will not be raised in the situation where an
+interpreter reads data as input and subsequently results in arbitrary
+computation.
 .SH BUGS
 Before Linux 3.19,
 .BR fallocate (2)
@@ -530,7 +563,7 @@ Thus, the reading application has no way to detect the error.
 The following program demonstrates the usage of the fanotify API.
 It marks the mount point passed as a command-line argument
 and waits for events of type
-.B FAN_PERM_OPEN
+.B FAN_OPEN_PERM
 and
 .BR FAN_CLOSE_WRITE .
 When a permission event occurs, a
