@@ -71,6 +71,15 @@ Having these two types of masks permits a mount point or directory to be
 marked for receiving events, while at the same time ignoring events for
 specific objects under the same mount point, or directory.
 .PP
+It is
+.I important 
+to note that if an ignore mask is set on a marked filesystem object, the
+ignore mask takes precedence in determining whether the event is to be
+sent to through to the user.
+This means, if an event mask for a marked filesystem object contains an
+event that is also present in the ignore mask for the same filesystem
+object, then the event will be discarded and not reported to the user.
+.PP
 The
 .BR fanotify_mark (2)
 system call adds a file, directory, or mount to a notification group

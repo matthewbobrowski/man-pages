@@ -126,6 +126,9 @@ will be monitored.
 The events in
 .I mask
 shall be added to, or removed from the ignore mask.
+See
+.BR NOTES
+for additional details about ignore mask details.
 .TP
 .B FAN_MARK_IGNORED_SURV_MODIFY
 The ignore mask will survive modify events.
@@ -204,11 +207,12 @@ Without this flag, only events for files are created.
 .TP
 .B FAN_EVENT_ON_CHILD
 Events for the immediate children of marked directories shall be created.
-The flag has no effect when marking mounts.
+The flag has no effect when setting a mark on a mount, filesystem, or is
+used when setting an ignore mask.
 Note that events are not generated for children of the subdirectories
 of marked directories.
 To monitor complete directory trees it is necessary to mark the relevant
-mount.
+mount, or filesystem.
 .PP
 The following composed value is defined:
 .TP
@@ -348,6 +352,15 @@ or
 Events of these types will not be raised in the situation where an
 interpreter reads data as input and subsequently results in arbitrary
 computation.
+.PP
+It is
+.I important
+to note that if an ignore mask is set on a marked filesystem object, the
+ignore mask takes precedence in determining whether the event is to be
+sent through to the user.
+This means, if an event mask for a marked filesystem object contains an
+event that is also present in the ignore mask for the same filesystem
+object, then the event will be discarded and not reported to the user.
 .SH BUGS
 The following bugs were present in Linux kernels before version 3.16:
 .IP * 3
