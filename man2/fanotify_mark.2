@@ -38,7 +38,7 @@ For an overview of the fanotify API, see
 .BR fanotify (7).
 .PP
 .BR fanotify_mark ()
-adds, removes, or modifies an fanotify mark on a filesystem object.
+adds, removes, or modifies a fanotify mark on a filesystem object.
 The caller must have read permission on the filesystem object that
 is to be marked.
 .PP
@@ -55,19 +55,21 @@ It must include exactly one of the following values:
 The events in
 .I mask
 will be added to the mark mask (or to the ignore mask).
+The
 .I mask
-must be nonempty or the error
+must not be emtpy, or the error
 .B EINVAL
-will occur.
+will be returned.
 .TP
 .B FAN_MARK_REMOVE
 The events in argument
 .I mask
 will be removed from the mark mask (or from the ignore mask).
+The
 .I mask
-must be nonempty or the error
+must not be empty, or the error
 .B EINVAL
-will occur.
+shall be returned.
 .TP
 .B FAN_MARK_FLUSH
 Remove either all mount or all non-mount marks from the fanotify group.
@@ -75,16 +77,17 @@ If
 .I flags
 contains
 .BR FAN_MARK_MOUNT ,
-all marks for mounts are removed from the group.
+all marks for mounts are removed from the fanotify group.
 Otherwise, all marks for directories and files are removed.
-No flag other than
+Flags other than
 .B FAN_MARK_MOUNT
 can be used in conjunction with
 .BR FAN_MARK_FLUSH .
+The
 .I mask
 is ignored.
 .PP
-If none of the values above is specified, or more than one is specified,
+If none of the values above are specified, or more than one is specified,
 the call fails with the error
 .BR EINVAL .
 .PP
@@ -122,10 +125,10 @@ will be monitored.
 .B FAN_MARK_IGNORED_MASK
 The events in
 .I mask
-shall be added to or removed from the ignore mask.
+shall be added to, or removed from the ignore mask.
 .TP
 .B FAN_MARK_IGNORED_SURV_MODIFY
-The ignore mask shall survive modify events.
+The ignore mask will survive modify events.
 If this flag is not set,
 the ignore mask is cleared when a modify event occurs
 for the ignored file or directory.
@@ -149,6 +152,12 @@ Create an event when a read-only file or directory is closed.
 .B FAN_OPEN
 Create an event when a file or directory is opened.
 .TP
+.B FAN_OPEN_EXEC
+Create an event when a file is opened with the intent to be executed.
+See
+.B NOTES
+for additional details.
+.TP
 .B FAN_Q_OVERFLOW
 Create an event when an overflow of the event queue occurs.
 The size of the event queue is limited to 16384 entries if
@@ -158,22 +167,34 @@ is not set in
 .TP
 .B FAN_OPEN_PERM
 Create an event when a permission to open a file or directory is requested.
-An fanotify file descriptor created with
+A fanotify file descriptor created with
 .B FAN_CLASS_PRE_CONTENT
 or
 .B FAN_CLASS_CONTENT
 is required.
 .TP
+.B FAN_OPEN_EXEC_PERM
+Create an event when a permission to open a file for execution is
+requested.
+A fanotify file descriptor created with
+.B FAN_CLASS_PRE_CONTENT
+or
+.B FAN_CLASS_CONTENT
+is required.
+See
+.B NOTES
+for additional details.
+.TP
 .B FAN_ACCESS_PERM
 Create an event when a permission to read a file or directory is requested.
-An fanotify file descriptor created with
+A fanotify file descriptor created with
 .B FAN_CLASS_PRE_CONTENT
 or
 .B FAN_CLASS_CONTENT
 is required.
 .TP
 .B FAN_ONDIR
-Create events for directories\(emfor example, when
+Create events for directories \(em for example, when
 .BR opendir (3),
 .BR readdir (3)
 (but see BUGS), and
@@ -309,6 +330,24 @@ was introduced in version 2.6.36 of the Linux kernel and enabled in version
 2.6.37.
 .SH CONFORMING TO
 This system call is Linux-specific.
+.SH NOTES
+When using either
+.B FAN_OPEN_EXEC
+or
+.B FAN_OPEN_EXEC_PERM
+within the
+.IR mask ,
+events of these types will only be returned when the direct execution of a
+program occurs.
+More specifically, this means that events of these types shall be generated
+for files that are opened using system calls
+.BR execve(2) ,
+.BR execveat(2) ,
+or
+.BR uselib(2) .
+Events of these types will not be raised in the situation where an
+interpreter reads data as input and subsequently results in arbitrary
+computation.
 .SH BUGS
 The following bugs were present in Linux kernels before version 3.16:
 .IP * 3
