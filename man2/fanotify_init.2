@@ -58,12 +58,16 @@ This limit cannot be overridden.
 .PP
 Calling
 .BR fanotify_init ()
-requires the
+using the
 .B CAP_SYS_ADMIN
-capability.
-This constraint might be relaxed in future versions of the API.
-Therefore, certain additional capability checks have been implemented as
-indicated below.
+capability will provide users the ability to use all fanotify features.
+Alternatively, users may call
+.BR fanotify_init ()
+without using the
+.B CAP_SYS_ADMIN
+capability by specifying the flag
+.BR FAN_UNPRIVILEGED
+to create and intialize a fanotify group with limited functionality.
 .PP
 The
 .I flags
@@ -146,6 +150,48 @@ capability.
 .BR FAN_REPORT_TID " (since Linux 4.20)"
 .\" commit d0a6a87e40da49cfc7954c491d3065a25a641b29
 Report thread id (TID) instead of process id (PID).
+.TP
+.B FAN_UNPRIVILEGED
+Permit a non-privileged user to initialize a fanotify group and event
+listener with limited functionality.
+This flag is to be only used in conjunction with
+.BR FAN_CLASS_NOTIF .
+Providing any other notification class or flag while attempting to use
+.BR FAN_UNPRIVILEGED
+will result with the error
+.BR EINVAL .
+The limitations imposed on the event listener when a user has requested
+.BR FAN_UNPRIVILEGED
+are as follows:
+.RS
+.IP * 3
+The user cannot request for an unlimited event queue by using
+.BR FAN_UNLIMITED_QUEUE .
+.IP * 3
+The user cannot request for an unlimited number of marks by using
+.BR FAN_UNLIMITED_MARKS .
+.IP * 3
+The user cannot request for permission events.
+This means that they're not permitted to use either notification classes
+.BR FAN_CLASS_CONTENT
+or
+.BR FAN_CLASS_PRE_CONTENT .
+.IP * 3
+The user is limited to only mark inodes.
+The ability to mark a mount or filesystem via
+.BR fanotify_mark()
+through the use of
+.BR FAN_MARK_MOUNT
+or
+.BR FAN_MARK_FILESYSTEM
+is not permitted.
+.IP * 3
+The event object in the event queue is limited in terms of the information
+that is made available to the unprivileged user.
+A user will not receive an open file descriptor in the event.
+A user will also not receive the pid that generated the event, unless the
+listening process itself generated the event.
+.RE
 .PP
 The
 .I event_f_flags

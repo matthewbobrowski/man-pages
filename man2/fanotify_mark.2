@@ -126,6 +126,10 @@ is not itself a mount point, the mount point containing
 will be marked.
 All directories, subdirectories, and the contained files of the mount point
 will be monitored.
+This flag cannot be used if the event listener represented by
+.I fanotify_fd
+has been initialized with
+.BR FAN_UNPRIVILEGED .
 .TP
 .BR FAN_MARK_FILESYSTEM " (since Linux 4.20)"
 .\" commit d54f4fba889b205e9cd8239182ca5d27d0ac3bc2
@@ -181,6 +185,10 @@ An fanotify file descriptor created with
 or
 .B FAN_CLASS_CONTENT
 is required.
+This mask cannot be used if the event listener represented by
+.I fanotify_fd
+has been initialized with
+.BR FAN_UNPRIVILEGED .
 .TP
 .B FAN_ACCESS_PERM
 Create an event when a permission to read a file or directory is requested.
@@ -189,6 +197,10 @@ An fanotify file descriptor created with
 or
 .B FAN_CLASS_CONTENT
 is required.
+This mask cannot be used if the event listener represented by
+.I fanotify_fd
+has been intialized with
+.BR FAN_UNPRIVILEGED .
 .TP
 .B FAN_ONDIR
 Create events for directories\(emfor example, when
